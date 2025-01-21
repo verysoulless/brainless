@@ -1,215 +1,544 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Real-time Chat</title>
-  <style>
-    /* Basic styling for chat application */
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f4f9;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-    .chat-container {
-      width: 400px;
-      background-color: #fff;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
-    }
-    .chat-header {
-      background-color: #007bff;
-      color: #fff;
-      padding: 10px;
-      text-align: center;
-    }
-    .name-input {
-      padding: 10px;
-      border-bottom: 1px solid #ddd;
-    }
-    .name-input input[type="text"] {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
-    .chat-messages {
-      height: 250px;
-      overflow-y: auto;
-      padding: 10px;
-      border-bottom: 1px solid #ddd;
-    }
-    .chat-input {
-      display: flex;
-      padding: 10px;
-    }
-    .chat-input input[type="text"] {
-      flex: 1;
-      padding: 15px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      margin-right: 10px;
-    }
-    .chat-input button {
-      padding: 10px 20px;
-      background-color: #007bff;
-      color: #fff;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .chat-input button:hover {
-      background-color: #0056b3;
-    }
-    .message {
-      margin-bottom: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .message .name {
-      font-weight: bold;
-    }
-    .message .time {
-      font-size: 0.8em;
-      color: #888;
-    }
-    .delete-button {
-      background: none;
-      border: none;
-      color: #888;
-      cursor: pointer;
-      font-size: 0.8em;
-      margin-left: 10px;
-    }
-    .delete-button:hover {
-      color: #f00;
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>  
+    <title>실시간 채팅 (Firestore)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            background-color: #1a1a1a;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        .container {
+            flex: 1;
+            width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .chat-header {
+            text-align: center;
+            padding: 15px;
+            background: #2d2d2d;
+            border-radius: 8px 8px 0 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .chat-header h1 {
+            font-size: 24px;
+            color: #ffffff;
+            margin: 0;
+        }
+
+        .chat-messages {
+            flex: 1;
+            background-color: #2d2d2d;
+            border-radius: 0;
+            padding: 20px;
+            overflow-y: auto;
+            margin: 1px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            max-height: calc(100vh - 180px);
+        }
+
+        .message {
+            padding: 10px 15px;
+            margin: 5px 0;
+            border-radius: 15px;
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+
+        .message-content {
+            margin-bottom: 5px;
+        }
+
+        .message-time {
+            font-size: 12px;
+            color: #a0a0a0;
+        }
+
+        .message.received {
+            background-color: #3d3d3d;
+            align-self: flex-start;
+            margin-right: auto;
+        }
+
+        .message.sent {
+            background-color: #0062cc;
+            color: white;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 10px;
+            padding: 15px;
+            background: #2d2d2d;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #4d4d4d;
+            border-radius: 20px;
+            font-size: 14px;
+            background: #3d3d3d;
+            color: #ffffff;
+        }
+
+        .chat-input input:focus {
+            outline: none;
+            border-color: #0062cc;
+        }
+
+        .chat-input button {
+            padding: 12px 24px;
+            background-color: #0062cc;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+
+        .chat-input button:hover {
+            background-color: #0051a8;
+        }
+
+        .nickname-prompt {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .nickname-form {
+            background: #2d2d2d;
+            padding: 20px;
+            border-radius: 8px;
+            width: 300px;
+        }
+
+        .nickname-form input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #4d4d4d;
+            border-radius: 4px;
+            background: #3d3d3d;
+            color: #ffffff;
+        }
+
+        .nickname-form select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #4d4d4d;
+            border-radius: 4px;
+            background: #3d3d3d;
+            color: #ffffff;
+        }
+
+        .nickname-form button {
+            width: 100%;
+            padding: 10px;
+            background: #0062cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .translate-btn {
+            padding: 4px 8px;
+            background-color: #555;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .translate-btn:hover {
+            background-color: #666;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #2d2d2d;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4d4d4d;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #5d5d5d;
+        }
+    </style>
 </head>
 <body>
-  <div class="chat-container">
-    <div class="chat-header">Real-time Chat</div>
-    <div class="name-input">
-      <input type="text" id="nameInput" placeholder="Enter your name">
+    <!-- 닉네임/언어 설정 -->
+    <div class="nickname-prompt" id="nicknamePrompt">
+        <div class="nickname-form">
+            <input type="text" id="nicknameInput" placeholder="닉네임을 입력하세요" maxlength="10" autocomplete="off">
+            <select id="languageSelect">
+                <option value="ko">한국어</option>
+                <option value="en">English</option>
+                <option value="ja">日本語</option>
+                <option value="cn">Chinese</option>
+            </select>
+            <button id="enterButton">입장하기</button>
+        </div>
     </div>
-    <div class="chat-messages" id="chatMessages"></div>
-    <div class="chat-input">
-      <!-- onkeydown 호출 시 IME 문제 방지 위해 handleKeyDown 함수에서 event.isComposing 체크 -->
-      <input type="text" id="messageInput" placeholder="Type a message" onkeydown="handleKeyDown(event)">
-      <button id="sendButton">Send</button>
+
+    <!-- 채팅 영역 -->
+    <div class="container">
+        <div class="chat-header">
+            <h1>실시간 채팅 (Firestore)</h1>
+        </div>
+        <div class="chat-messages" id="messageList">
+            <!-- 메시지 목록 -->
+        </div>
+        <div class="chat-input">
+            <input type="text" id="messageInput" placeholder="메시지를 입력하세요" autocomplete="off">
+            <button id="sendButton">전송</button>
+        </div>
     </div>
-  </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
-    import {
-      getFirestore,
-      collection,
-      addDoc,
-      onSnapshot,
-      query,
-      orderBy,
-      deleteDoc,
-      doc
-    } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
+    <!-- 자바스크립트 -->
+    <script type="module">
+        /******************************************
+         * 1) Firebase SDK import
+         ******************************************/
+        import { 
+            initializeApp 
+        } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
 
-    // Firebase configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyCn5AFHwVky_yRLBx09JZ_CMf_X-6MXdyk",
-      authDomain: "firsttestcokac.firebaseapp.com",
-      projectId: "firsttestcokac",
-      storageBucket: "firsttestcokac.firebasestorage.app",
-      messagingSenderId: "292285485609",
-      appId: "1:292285485609:web:449e0ff9e20819abad8238",
-      measurementId: "G-VXKRXXVV68"
-    };
+        import { 
+            getFirestore, 
+            collection, 
+            addDoc, 
+            onSnapshot, 
+            query, 
+            orderBy, 
+            doc, 
+            deleteDoc,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
 
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const messagesRef = collection(db, "messages");
+        /******************************************
+         * 2) Firebase 초기화
+         ******************************************/
+         const firebaseConfig = {
+        apiKey: "AIzaSyCn5AFHwVky_yRLBx09JZ_CMf_X-6MXdyk",
+        authDomain: "firsttestcokac.firebaseapp.com",
+        projectId: "firsttestcokac",
+        storageBucket: "firsttestcokac.firebasestorage.app",
+        messagingSenderId: "292285485609",
+        appId: "1:292285485609:web:449e0ff9e20819abad8238",
+        measurementId: "G-VXKRXXVV68"
+        };
 
-    // 실시간 리스너
-    const q = query(messagesRef, orderBy("timestamp", "asc"));
-    onSnapshot(q, (snapshot) => {
-      const chatMessages = document.getElementById('chatMessages');
-      chatMessages.innerHTML = ''; // Clear existing messages
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        // 파이어스토어 컬렉션 참조
+        const messagesRef = collection(db, "messages");
 
-      snapshot.forEach((docSnap) => {
-        const messageData = docSnap.data();
+        /******************************************
+         * 3) 전역 변수: 닉네임, 언어, userId 등
+         ******************************************/
+        let nickname = "";
+        let language = "ko";
+        // 유저 식별을 위한 랜덤 ID (간단 예시)
+        const userId = "user_" + Math.random().toString(36).substr(2, 9);
 
-        const messageElement = document.createElement('div');
-        messageElement.classList.add('message');
-        messageElement.innerHTML = `
-          <div>
-            <span class="name">${messageData.name}</span>: ${messageData.text}
-            <span class="time">(${new Date(messageData.timestamp.toDate()).toLocaleTimeString()})</span>
-          </div>
-          <button class="delete-button" onclick="deleteMessage('${docSnap.id}')">Delete</button>
-        `;
-        chatMessages.appendChild(messageElement);
-      });
+        /******************************************
+         * 4) DOMContentLoaded 이벤트
+         ******************************************/
+        document.addEventListener("DOMContentLoaded", () => {
+            console.log("DOM fully loaded and parsed");
 
-      // Scroll to the bottom
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    });
+            // 닉네임 입력 엔터 키
+            const nicknameInput = document.getElementById("nicknameInput");
+            nicknameInput.addEventListener("keypress", (e) => {
+                if (e.key === "Enter") {
+                    setNickname();
+                }
+            });
 
-    // 메시지 전송 함수
-    async function sendMessage() {
-      const name = document.getElementById('nameInput').value.trim();
-      const message = document.getElementById('messageInput').value.trim();
+            // 입장하기 버튼
+            const enterButton = document.getElementById("enterButton");
+            enterButton.addEventListener("click", setNickname);
 
-      if (name && message) {
-        try {
-          await addDoc(messagesRef, {
-            name: name,
-            text: message,
-            timestamp: new Date()
-          });
-          document.getElementById('messageInput').value = ''; // Clear message input
-        } catch (error) {
-          console.error("Error sending message: ", error);
+            // 메시지 전송 버튼
+            const sendButton = document.getElementById("sendButton");
+            sendButton.addEventListener("click", sendMessage);
+
+            // 메시지 입력창 엔터키
+            const messageInput = document.getElementById("messageInput");
+            messageInput.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+        });
+
+        /******************************************
+         * 5) 닉네임/언어 설정 후 채팅 시작
+         ******************************************/
+        function setNickname() {
+            const input = document.getElementById("nicknameInput");
+            const langSelect = document.getElementById("languageSelect");
+
+            nickname = input.value.trim();
+            language = langSelect.value;
+
+            if (nickname) {
+                document.getElementById("nicknamePrompt").style.display = "none";
+                // 닉네임 설정되었으므로 파이어스토어 메시지 실시간 구독
+                watchMessages();
+                console.log("Nickname set:", nickname, "Language set:", language);
+            } else {
+                alert("닉네임을 입력하세요!");
+            }
         }
-      }
-    }
 
-    // 메시지 삭제 함수
-    async function deleteMessage(docId) {
-      try {
-        await deleteDoc(doc(db, "messages", docId));
-        // 서버에서 성공적으로 삭제되면 실시간 리스너가 UI에서 제거
-      } catch (error) {
-        console.error("Error deleting message: ", error);
-      }
-    }
+        /******************************************
+         * 6) Firestore onSnapshot으로 실시간 메시지 가져오기
+         ******************************************/
+        function watchMessages() {
+            const qMessages = query(messagesRef, orderBy("timestamp", "asc"));
+            onSnapshot(qMessages, (snapshot) => {
+                const messageList = document.getElementById("messageList");
+                messageList.innerHTML = ""; // 초기화
 
-    // 전역에 등록해서 onclick="deleteMessage(...)" 인라인 이벤트가 접근 가능하도록
-    window.deleteMessage = deleteMessage;
+                snapshot.forEach((docSnap) => {
+                    const msg = docSnap.data();
+                    const docId = docSnap.id;
 
-    // Enter 키 처리 함수 (IME 문제 방지)
-    function handleKeyDown(event) {
-      // 한글 IME 상태에서 Enter가 2번 발생하는 경우를 막기 위해
-      if (event.isComposing || event.keyCode === 229) {
-        return;
-      }
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        sendMessage();
-      }
-    }
+                    // 시간 표시
+                    let timeString = "";
+                    if (msg.timestamp?.toDate) {
+                        const dateObj = msg.timestamp.toDate();
+                        timeString = dateObj.toLocaleTimeString("ko-KR", {
+                            hour: "2-digit",
+                            minute: "2-digit"
+                        });
+                    }
 
-    // 전역에 등록해서 onkeydown="handleKeyDown(...)" 인라인 이벤트가 접근 가능하도록
-    window.handleKeyDown = handleKeyDown;
+                    // 보내는 메시지인지, 받는 메시지인지 구분
+                    const isMyMessage = (msg.userId === userId);
+                    const messageClass = isMyMessage ? "sent" : "received";
 
-    // Send 버튼 클릭 이벤트
-    document.getElementById('sendButton').addEventListener('click', sendMessage);
-  </script>
+                    // 메시지 엘리먼트 생성
+                    const messageElement = document.createElement("div");
+                    messageElement.classList.add("message", messageClass);
+
+                    // 닉네임 + 메시지 내용
+                    let contentHtml = "";
+                    if (!isMyMessage) {
+                        // 내 메시지가 아니면 닉네임/언어 표시
+                        contentHtml += `<strong>${msg.nickname}</strong> (${msg.language})<br>`;
+                    }
+                    contentHtml += `<div class="message-content">${msg.text}</div>`;
+
+                    // 번역 결과 표시 영역
+                    // 여기서 docId로 고유 ID를 잡아준다
+                    contentHtml += `<div class="translation-content" id="translation-${docId}" style="margin-top:5px;"></div>`;
+
+                    // 시간 표시
+                    contentHtml += `<div class="message-time">${timeString}</div>`;
+
+                    // 번역 버튼 (내 메시지가 아니면 표시)
+                    if (!isMyMessage) {
+                        contentHtml += `
+                          <button class="translate-btn" 
+                                  onclick="translateMessage('${docId}','${encodeURIComponent(msg.text)}')">
+                              번역
+                          </button>`;
+                    }
+
+                    // Delete 버튼 (간단 예시: 아무나 삭제 가능)
+                    contentHtml += `
+                      <button class="translate-btn" 
+                              style="background-color:#900;" 
+                              onclick="deleteMessage('${docId}')">
+                          삭제
+                      </button>`;
+
+                    messageElement.innerHTML = contentHtml;
+                    messageList.appendChild(messageElement);
+                });
+
+                // 스크롤 항상 최하단
+                messageList.scrollTop = messageList.scrollHeight;
+            });
+        }
+
+        /******************************************
+         * 7) Firestore에 메시지 전송
+         ******************************************/
+        async function sendMessage() {
+            const input = document.getElementById("messageInput");
+            const messageText = input.value.trim();
+            if (!messageText || !nickname) return;
+
+            try {
+                await addDoc(messagesRef, {
+                    text: messageText,
+                    timestamp: serverTimestamp(),  // Firestore 서버타임
+                    userId: userId,
+                    nickname: nickname,
+                    language: language
+                });
+                input.value = "";
+            } catch (error) {
+                console.error("메시지 전송 오류:", error);
+            }
+        }
+
+        /******************************************
+         * 8) Firestore 문서 삭제 (Delete 버튼)
+         ******************************************/
+        async function deleteMessage(docId) {
+            if (!confirm("정말 이 메시지를 삭제하시겠습니까?")) return;
+            try {
+                await deleteDoc(doc(db, "messages", docId));
+            } catch (error) {
+                console.error("메시지 삭제 오류:", error);
+            }
+        }
+        window.deleteMessage = deleteMessage; // 전역등록
+
+        /******************************************
+         * 9) OpenAI 번역 함수
+         ******************************************/
+        async function translateMessageContent(text) {
+            // 실제 OpenAI API 키 사용 시에는 'Bearer' 뒤에 본인의 API 키를 넣어야 합니다.
+            const OPENAI_API_KEY = "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"; // 실제 키 사용
+            const originalText = decodeURIComponent(text);
+
+            try {
+                const response = await fetch("https://api.openai.com/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${OPENAI_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-3.5-turbo",  // 또는 "gpt-4"
+                        messages: [
+                            {
+                                role: "system",
+                                content: 
+`You are a genius translator.
+Your mission is to translate the sentence the user says into Korean, English, Japanese, Vietnamese, and Chinese.
+You must return JSON format like this:
+{
+  "ko": "번역된 한국어",
+  "en": "Translated English",
+  "ja": "翻訳された日本語",
+  "vi": "Bản dịch tiếng Việt",
+  "cn": "翻译后的中文"
+}`
+                            },
+                            {
+                                role: "user",
+                                content: originalText
+                            }
+                        ]
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error("OpenAI API 요청 실패");
+                }
+
+                const data = await response.json();
+
+                // 기본 번역값 (실패 시 대체)
+                const fallback = {
+                    ko: originalText,
+                    en: originalText,
+                    ja: originalText,
+                    vi: originalText,
+                    cn: originalText
+                };
+
+                try {
+                    const parsedContent = JSON.parse(data.choices[0].message.content);
+                    return parsedContent;
+                } catch (e) {
+                    console.error("번역 JSON 파싱 오류:", e);
+                    return fallback;
+                }
+            } catch (error) {
+                console.error("번역 오류:", error);
+                return {
+                    ko: text,
+                    en: text,
+                    ja: text,
+                    vi: text,
+                    cn: text
+                };
+            }
+        }
+
+        /******************************************
+         * 10) 메시지 번역 버튼을 눌렀을 때
+         ******************************************/
+        async function translateMessage(docId, text) {
+            // 메시지마다 고유한 번역영역 id="translation-문서ID"
+            const translationDiv = document.getElementById(`translation-${docId}`);
+            if (!translationDiv) return;
+
+            translationDiv.textContent = "번역 중...";
+            const translations = await translateMessageContent(text);
+
+            // 사용자가 입장 시 선택한 언어 (ko, en, ja, cn 등)
+            let displayText = translations[language];
+            if (!displayText) {
+                // 혹시 JSON에 해당 언어 키가 없으면 영문으로 표시
+                displayText = translations.en || decodeURIComponent(text);
+            }
+
+            translationDiv.textContent = `⇒ ${displayText}`;
+        }
+        window.translateMessage = translateMessage; // 전역등록
+    </script>
 </body>
 </html>
